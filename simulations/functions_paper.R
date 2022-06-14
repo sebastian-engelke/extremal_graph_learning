@@ -15,14 +15,14 @@ sim_study <- function(d = 5,
   ##    - d: dimension.
   ##    - n: number of samples.
   ##    - p: threshold probability.
-  ##    - method: data generation method.
+  ##    - gen_method: data generation method.
+  ##    - alphad: parameter for the block model.
   ##    - m: the number of edges added in each setp of the Barabasi-Albert model (m=1 is a tree)
   ##    - reg_method: regression method used to estimate the extremal graphical structure.
   ##    - rholist: the list of penality parameters; must be given a string.
-  ##    - noise: "none", "iid" or "tree". The type of noise that is added 
-  ##        to the simulation of the model. Only use with method="maxstable" !!!
+  ##    - incoh: If TRUE, returns incoherence values.
   ## Returns:
-  ##  a tibble with time, KKT condition values and duality gap
+  ##  a tibble with F scores
   
   # check arguments
   
@@ -185,26 +185,11 @@ Gamma2Inc <- function(G, cor.scale=TRUE, pessimistic=FALSE){
 
 
 # traditional criteria
-# is consistent for a fixed design, fixed p
 aic <- function(n, p) 2
 bic <- function(n, p) log(n)
 
 # modified BIC of Wang & Leng, JRSSB 2009
-# it has a weird justification in the paper
 mbic <- function(n, p) log(n) * log(log(p))
-
-# generalized information criterion of Fan & Tang, JRSSB 2013
-# seems to be consistent as long as log(p) = O(n^a), a<1
-# questions: where is variance in their GLM? is deviance really "sum of square residuals" in Gaussian LR?
-gic <- function(n, p) log(log(n)) * log(p)
-
-# extended BIC from Chen & Chen, Biometrika 2008, but in the form of Wang & Zhu, JMA 2011
-# only consistent if p = O(n^a), a<1, gam >= 1 - 1/2a
-ebic <- function(n, p) log(n) + 2*gam*log(p)
-
-# high-dimensional BIC from Wang & Zhu, JMA 2011
-# consistent if p>n, log(p) = O(n^a), a<1, gam > 1
-hbic <- function(n, p) 2*gam*log(p)
 
 
 
