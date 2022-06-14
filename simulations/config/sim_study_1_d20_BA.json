@@ -1,0 +1,15 @@
+{
+  "params":{
+    "d":[20],
+    "k":[10,20,100],
+    "m":[2],
+    "method": ["maxstable"],
+    "rhostring": ["seq(0.01,1.5,length=20)"],
+    "reg_method": ["emst", "ns", "glasso", "MTP2"]},
+  "other_params":{
+    "nsim":[100], 
+    "seed":36224, 
+    "random_seed_for_each": ["nsim"]  
+  }
+}
+

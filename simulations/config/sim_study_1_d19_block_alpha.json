@@ -1,0 +1,16 @@
+{
+  "params":{
+    "k":[19, 38, 190], // [19, 38, 95, 190]
+    "alphad":[0.1, 1, 2, 10, 20],
+    "method": ["maxstable"],
+    "gen_model": ["block"],
+    "rhostring": ["seq(0.01,0.5,length=20)"],
+    "incoh": [true],
+    "reg_method": ["ns", "glasso"]}, // ["emst","glasso", "glasso_adap", "mb"]  "laplace_adap_emp", "laplace_adap_emtp2"
+  "other_params":{
+    "nsim":[100], // 100
+    "seed":24324, 
+    "random_seed_for_each": ["nsim"]  
+  }
+}
+
