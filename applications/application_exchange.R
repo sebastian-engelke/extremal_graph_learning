@@ -13,11 +13,11 @@ load(here("applications/data/coords_exchange.Rdata"))
 
 g <- graphicalExtremes:::set_graph_parameters(g)
 n <- nrow(X)
-p <- .95 # same as in the tree learning paper
+p <- 1 - floor(n^.7)/n
 Y <- data2mpareto(X, p)
 rholist <- seq(.01, .5, length.out=100)
 
-eglearn_fit <- eglearn(Y, rholist=rholist, reg_method="ns", complete_Gamma=F)
+eglearn_fit <- eglearn2(Y, rholist=rholist, reg_method="ns", complete_Gamma=F)
 connected_tmp <- sapply(eglearn_fit$graph, is_connected)
 
 eglearn_fit$graph_ic <- lapply(eglearn_fit$graph_ic, function(gr) {

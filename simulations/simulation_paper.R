@@ -19,7 +19,7 @@ source(here("simulations/functions_paper.R"))
 
 
 # change from here ----
-sim_setting <- "sim_study_1_d20_tree"
+sim_setting <- "sim_study_1_d20_BA"
 strategy <-  "sequential"  # "sequential" or "parallel"
 n_workers <- 64
 sim_function <- sim_study

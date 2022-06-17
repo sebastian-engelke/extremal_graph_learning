@@ -82,10 +82,53 @@ eglearn_path <- function(d=20, m=2, reg_method, rholist, ...){
   tibble(rholist = rholist, F1 = F1_tmp, sparsity = sparse_tmp, connected = factor(connected_tmp), reg_method = reg_method)
 }
 
+plot(fit_tmp$graph_ic$aic)s
+d <- 20
+m <- 2
+reg_method = "ns"
+
+rholist <- seq(0.001, 1, length.out = 30) 
+
+
+BA_model <- generate_BA_model(d=d, m=m)
+g <- BA_model$graph
+G <- BA_model$G
+k <- d * 5
+n <- ceiling(k^{1/0.7})
+p <- 1 - k/n
+X <- rmstable(n=n, d=d, model="HR", par=G)
+
+fit_tmp <- eglearn2(data = X, p=p, rholist = rholist, reg_method = reg_method)
+F1_tmp <- sapply(1:length(rholist), FUN = function(i) F1_score(g=g, gest=fit_tmp$graph[[i]]))
+connected_tmp <- sapply(1:length(rholist), FUN = function(i) ifelse(is_connected(fit_tmp$graph[[i]]), 1, 3))
+sparse_tmp <- sapply(1:length(rholist), FUN = function(i) length(E(fit_tmp$graph[[i]])) / (d*(d-1)/2))
+
+plot(rholist, F1_tmp, type="b", pch = connected_tmp, ylim=c(0, 1), xlab="Penalization parameter rho", ylab = "F score")
+par(new=TRUE)
+## Plot the second plot and put axis scale on right
+plot(rholist, sparse_tmp, pch=15,  xlab="", ylab="", ylim=c(0,1), type="l", lty=2)
+
+plot(fit_tmp$graph_ic$aic)
+plot(fit_tmp$graph_ic$bic)
+plot(fit_tmp$graph_ic$mbic)
+
+F1_score(g, fit_tmp$graph_ic$aic)
+F1_score(g, fit_tmp$graph_ic$bic)
+F1_score(g, fit_tmp$graph_ic$mbic)
+
+
+
+
+
+
 
 set.seed(124124)
 rholist <- seq(0.000001, 1, length.out = 30) 
 tbl1 <-  eglearn_path(d=20, m=2, reg_method = "ns", rholist=rholist)
+
+
+
+
 rholist <- seq(0.000001, .25, length.out = 30) 
 tbl2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist)
 

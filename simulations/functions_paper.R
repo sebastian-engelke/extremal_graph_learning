@@ -1,3 +1,178 @@
+mychol <- function(M){
+  d <- nrow(M)
+  n <- rankMatrix(M)
+  if(n==d) R <- chol(M)
+  else{
+    R1 <- chol(M[1:n, 1:n])
+    R <- cbind(R1, solve(t(R1)) %*% M[1:n, (n+1):d])
+  }
+  return(R)
+}
+
+glasso_mb2 <- function(data, samp_size, lambda){
+  
+  # Initialize variables
+  dd <- ncol(data)
+  data_std <- scale(data)
+  adj.est <- array(NA, dim = c(dd, dd, length(lambda)))
+  adj.ic.est <- array(NA, dim = c(dd, dd, 3))
+  lambda_order <- order(lambda, decreasing = TRUE)
+  lambda_dec <- sort(lambda, decreasing = TRUE)
+  # there was some subtlety with the ordering since glmnet always gives back
+  # in a certain order, that's why I have this here
+  
+  # Loop through variables
+  for(i in (1:dd)){
+    X <- data_std[,-i]
+    Y <- data_std[,i]
+    lasso_fit <- glmnet::glmnet(x = X, y = Y, family = "gaussian", lambda = lambda_dec, standardize=F, intercept=F)
+    if(i==1){
+      # ensures same lambda sequence is used for different lasso regressions
+      lambda_dec <- lasso_fit$lambda
+      null.vote <- array(0, dim = c(dd, dd, length(lambda)))
+      null.vote.ic <- array(0, dim = c(dd, dd, 3))
+    }
+    # make sure consistent with default value
+    null.vote[i, -i, ] <- null.vote[i, -i, ] +
+      (abs(as.matrix(lasso_fit$beta)) <= 1e-10)
+    null.vote[-i, i, ] <- null.vote[-i, i, ] +
+      (abs(as.matrix(lasso_fit$beta)) <= 1e-10)
+    
+    aic.idx <- which.min( samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev + aic(samp_size, ncol(X) + 1) * lasso_fit$df)
+    bic.idx <- which.min(samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev + bic(samp_size, ncol(X) + 1) * lasso_fit$df)
+    mbic.idx <- which.min(samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev + mbic(samp_size, ncol(X) + 1) * lasso_fit$df)
+    
+    null.vote.ic[i, -i, ] <- null.vote.ic[i, -i,] +
+      (abs(as.matrix(lasso_fit$beta[,c(aic.idx, bic.idx, mbic.idx)])) <= 1e-10)
+    null.vote.ic[-i, i, ] <- null.vote.ic[-i, i,] +
+      (abs(as.matrix(lasso_fit$beta[,c(aic.idx, bic.idx, mbic.idx)])) <= 1e-10)
+  }
+  adj.est[,,lambda_order] <- null.vote <= 1
+  adj.ic.est <- null.vote.ic <= 1
+  return(list(adj.est=adj.est, adj.ic.est = adj.ic.est))
+}
+
+
+
+eglearn2 <- function(data,
+                     p = NULL,
+                     rholist = c(0.1, 0.15, 0.19, 0.205),
+                     reg_method = c("ns", "glasso"),
+                     complete_Gamma = FALSE) {
+  
+  # Check arguments
+  reg_method <- match.arg(reg_method)
+  
+  if (any(rholist < 0)) {
+    stop("The regularization parameters in `rholist` must be non-negative.",
+         call. = FALSE
+    )
+  }
+  
+  # Normalize data
+  if (!is.null(p)) {
+    data.std <- data2mpareto(data, p)
+  }
+  else {
+    data.std <- data
+  }
+  
+  # Initialize variables
+  Gamma <- emp_vario(data = data.std)
+  sel_methods <- c("aic", "bic", "mbic")
+  
+  graphs <- list()
+  Gammas <- list()
+  rhos <- list()
+  r <- length(rholist)
+  d <- ncol(Gamma)
+  
+  null.vote <- array(0, dim = c(d, d, length(rholist)))
+  null.vote.ic <- array(0, dim = c(d, d, length(sel_methods)))
+  
+  # Loop through variables
+  for (k in 1:d) {
+    Sk <- Gamma2Sigma(Gamma = Gamma, k = k)
+    if (reg_method == "glasso") {
+      gl.fit <- lapply(1:length(rholist), FUN = function(i) {
+        glassoFast::glassoFast(S = Sk, rho = rholist[i], thr = 1e-8, maxIt = 100000)$wi
+      })
+      gl.tmp <- array(unlist(gl.fit), dim = c(d - 1, d - 1, r))
+      null.vote[-k, -k, ] <- null.vote[-k, -k, , drop = FALSE] +
+        (abs(gl.tmp) <= 1e-5) ## make sure is consistent with default threshold value
+    }
+    else if (reg_method == "ns") {
+      samp_size <- length(which(data.std[, k] > 1))
+      X <- mychol(Sk)
+      gl.tmp <- glasso_mb2(data = X, samp_size=samp_size, lambda = rholist)
+      null.vote[-k, -k, ] <- null.vote[-k, -k, , drop = FALSE] + (!gl.tmp$adj.est)
+      null.vote.ic[-k, -k, ] <- null.vote.ic[-k, -k, , drop = FALSE] + (!gl.tmp$adj.ic.est)
+    }
+  }
+  
+  adj.est <- (null.vote / (ncol(null.vote) - 2)) < 0.5
+  # only makes sense for MB at the moment
+  adj.ic.est <- (null.vote.ic / (ncol(null.vote.ic) - 2)) < 0.5
+  
+  
+  
+  # complete Gamma for rholist
+  for (j in 1:r) {
+    rho <- rholist[j]
+    est_graph <- igraph::graph_from_adjacency_matrix(
+      adj.est[, ,j], mode = "undirected", diag = FALSE)
+    
+    if (complete_Gamma == FALSE) {
+      
+      Gamma_curr <- NA
+    }
+    else {
+      Gamma_curr <- try_complete_Gamma(est_graph, Gamma, "rho", round(rho, 3))
+    }
+    
+    graphs[[j]] <- est_graph
+    Gammas[[j]] <- Gamma_curr
+    rhos[[j]] <- rho
+  }
+  
+  # complete Gamma for ns
+  graphs_ic <-  list(aic = NA, bic = NA, mbic = NA)
+  Gammas_ic <-  list(aic = NA, bic = NA, mbic = NA)
+  
+  if (reg_method == "ns") {
+    for (l in seq_along(sel_methods)){
+      
+      est_graph <-  igraph::graph_from_adjacency_matrix(
+        adj.ic.est[, ,l], mode = "undirected", diag = FALSE)
+      
+      if (complete_Gamma == FALSE) {
+        
+        Gamma_curr <- NA
+      }
+      else {
+        Gamma_curr <- try_complete_Gamma(est_graph, Gamma,
+                                         key = "information criterion",
+                                         val = sel_methods[l])
+      }
+      
+      graphs_ic[[l]] <- est_graph
+      Gammas_ic[[l]] <- Gamma_curr
+    }
+  }
+  
+  return(list(graph = graphs,
+              Gamma = Gammas,
+              rholist = rhos,
+              graph_ic = graphs_ic,
+              Gamma_ic = Gammas_ic))
+}
+
+
+
+
+
+
+
 sim_study <- function(d = 5, 
                           n = 100,
                           p = NULL,
@@ -84,7 +259,7 @@ sim_study <- function(d = 5,
   }
   else{
     ptm <- proc.time()[1]
-    fit <- eglearn(data = X, p=p, rholist = rholist, reg_method = reg_method, complete_Gamma = FALSE)
+    fit <- eglearn2(data = X, p=p, rholist = rholist, reg_method = reg_method, complete_Gamma = FALSE)
     time <- proc.time()[1] - ptm
     F1 <- sapply(1:length(rholist), FUN = function(i) F1_score(g=g, gest=fit$graph[[i]]))
     if(reg_method=="ns") F1_ic <- sapply(1:3, FUN = function(i) F1_score(g=g, gest=fit$graph_ic[[i]])) # 
