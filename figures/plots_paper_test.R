@@ -7,7 +7,7 @@ library(cowplot)
 library(tictoc)
 library(here)
 library(clusterGeneration)
-source(here("simulations/functions_paper.R"))
+source(here("GitHub/extremal_graph_learning/simulations/functions_paper.R"))
 
 ####################
 
@@ -155,14 +155,14 @@ save_myplot(gg_path, plt_nm = here("figures/ns_gl_path.pdf"), width = 2.5, heigh
 ##### trees and BA model  #######
 #################################
 
-d <- 20  ## 50, 100
+d <- 20  ##20, 50, 100
 
-dat_tree <- read_rds(here("figures/data", paste0("sim_study_1_d",d,"_tree.rds"))) %>% 
+dat_tree <- read_rds(here("GitHub/extremal_graph_learning/figures/data", paste0("sim_study_1_d",d,"_tree.rds"))) %>% 
   unnest(cols = c("perf")) %>%
   mutate(value=if_else(type=="time", log10(abs(value)), value)) %>% 
   pivot_wider(names_from = type, values_from = value) 
 
-dat_BA <- read_rds(here("figures/data", paste0("sim_study_1_d",d,"_BA.rds")))  %>% 
+dat_BA <- read_rds(here("GitHub/extremal_graph_learning/figures/data", paste0("sim_study_1_d",d,"_BA.rds")))  %>% 
   unnest(cols = c("perf")) %>%
   mutate(value=if_else(type=="time", log10(abs(value)), value)) %>% 
   pivot_wider(names_from = type, values_from = value) 
@@ -195,7 +195,7 @@ gg1 <- ggplot(dat3,  aes(x=n_char, y=score, fill= reg_method_label, col=reg_meth
   ylim(0,1) +
   theme(legend.position = c(0.5, -0.23), legend.direction = "horizontal",  strip.text.x = element_blank()) +
   labs(color="Method:", fill = "Method:")
-save_myplot(gg1, plt_nm = here("figures", paste0("boxplot_d",d,".pdf")), width = 3, height = 3)
+save_myplot(gg1, plt_nm = here("GitHub/extremal_graph_learning/figures", paste0("boxplot_d",d,".pdf")), width = 3, height = 3)
 
 
 
@@ -205,7 +205,7 @@ save_myplot(gg1, plt_nm = here("figures", paste0("boxplot_d",d,".pdf")), width =
 #################################
 
     
-  dat <- read_rds(here("figures/data/sim_study_1_d19_block_alpha.rds")) %>%
+  dat <- read_rds(here("GitHub/extremal_graph_learning/figures/data/sim_study_1_d19_block_alpha.rds")) %>%
     unnest(cols = c("perf")) %>%
     mutate(value=if_else(type=="time", log10(abs(value)), value)) %>%
     pivot_wider(names_from = type, values_from = value) %>%
@@ -289,7 +289,7 @@ save_myplot(gg1, plt_nm = here("figures", paste0("boxplot_d",d,".pdf")), width =
                   heights = c(1, -0.1, 1),
                   legend = "bottom", legend.grob = legend)
   
-  save_myplot(g5, here("figures/block_alpha.pdf"), height = 5, width = 5)
+  save_myplot(g5, here("GitHub/extremal_graph_learning/figures/block_alpha.pdf"), height = 5, width = 5)
   
   
   

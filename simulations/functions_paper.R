@@ -9,6 +9,14 @@ mychol <- function(M){
   return(R)
 }
 
+aic <- function(n, p) 2
+bic <- function(n, p) log(n)
+
+# modified BIC of Wang & Leng, JRSSB 2009
+mbic <- function(n, p) log(n) * log(log(p))
+
+
+
 glasso_mb2 <- function(data, samp_size, lambda){
   
   # Initialize variables
@@ -38,9 +46,18 @@ glasso_mb2 <- function(data, samp_size, lambda){
     null.vote[-i, i, ] <- null.vote[-i, i, ] +
       (abs(as.matrix(lasso_fit$beta)) <= 1e-10)
     
-    aic.idx <- which.min( samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev + aic(samp_size, ncol(X) + 1) * lasso_fit$df)
-    bic.idx <- which.min(samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev + bic(samp_size, ncol(X) + 1) * lasso_fit$df)
-    mbic.idx <- which.min(samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev + mbic(samp_size, ncol(X) + 1) * lasso_fit$df)
+    aic.idx <- which.min( samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev
+                          + aic(samp_size, ncol(X) + 1) * lasso_fit$df )
+    bic.idx <- which.min( samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev
+                         + bic(samp_size, ncol(X) + 1) * lasso_fit$df )
+    mbic.idx <- which.min( samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev
+                          + mbic(samp_size, ncol(X) + 1) * lasso_fit$df )
+    # aic.idx <- which.min( samp_size * log( (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev )
+    #                       + aic(samp_size, ncol(X) + 1) * lasso_fit$df )
+    # bic.idx <- which.min( samp_size * log( (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev )
+    #                       + bic(samp_size, ncol(X) + 1) * lasso_fit$df )
+    # mbic.idx <- which.min( samp_size * log( (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev )
+    #                        + mbic(samp_size, ncol(X) + 1) * lasso_fit$df)
     
     null.vote.ic[i, -i, ] <- null.vote.ic[i, -i,] +
       (abs(as.matrix(lasso_fit$beta[,c(aic.idx, bic.idx, mbic.idx)])) <= 1e-10)
