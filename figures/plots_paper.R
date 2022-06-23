@@ -2,6 +2,7 @@ library(graphicalExtremes)
 library(igraph)
 library(tidyverse)
 library(latex2exp)
+library(glmnet)  
 library(egg)
 library(cowplot)
 library(tictoc)
@@ -112,7 +113,7 @@ save_myplot(gg_path, plt_nm = here("figures/ns_gl_path.pdf"), width = 2.5, heigh
 ##### trees and BA model  #######
 #################################
 
-d <- 20  ## 50, 100
+d <- 100  ## 50, 100
 
 dat_tree <- read_rds(here("figures/data", paste0("sim_study_1_d",d,"_tree.rds"))) %>% 
   unnest(cols = c("perf")) %>%
