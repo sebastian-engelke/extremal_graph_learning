@@ -68,7 +68,7 @@ eglearn_path <- function(d=20, m=2, reg_method, rholist, ...){
   p <- 1 - k/n
   X <- rmstable(n=n, d=d, model="HR", par=G)
   
-  fit_tmp <- eglearn(data = X, p=p, rholist = rholist, reg_method = reg_method)
+  fit_tmp <- eglearn2(data = X, p=p, rholist = rholist, reg_method = reg_method)
   F1_tmp <- sapply(1:length(rholist), FUN = function(i) F1_score(g=g, gest=fit_tmp$graph[[i]]))
   connected_tmp <- sapply(1:length(rholist), FUN = function(i) ifelse(is_connected(fit_tmp$graph[[i]]), 1, 3))
   sparse_tmp <- sapply(1:length(rholist), FUN = function(i) length(E(fit_tmp$graph[[i]])) / (d*(d-1)/2))
