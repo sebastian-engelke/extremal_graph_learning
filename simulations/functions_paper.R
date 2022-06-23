@@ -21,7 +21,9 @@ glasso_mb2 <- function(data, samp_size, lambda){
   
   # Initialize variables
   dd <- ncol(data)
-  data_std <- scale(data)
+  # data_std <- scale(data)
+  S_tmp <- t(data) %*% data
+  data_std <- data %*% diag(diag(S_tmp)^(-1/2))
   adj.est <- array(NA, dim = c(dd, dd, length(lambda)))
   adj.ic.est <- array(NA, dim = c(dd, dd, 3))
   lambda_order <- order(lambda, decreasing = TRUE)
@@ -33,10 +35,10 @@ glasso_mb2 <- function(data, samp_size, lambda){
   for(i in (1:dd)){
     X <- data_std[,-i]
     Y <- data_std[,i]
-    lasso_fit <- glmnet::glmnet(x = X, y = Y, family = "gaussian", lambda = lambda_dec, standardize=F, intercept=F)
+    lasso_fit <- glmnet::glmnet(x = X, y = Y, family = "gaussian",
+                                lambda = lambda_dec/nrow(X)*samp_size/(samp_size-1),
+                                standardize=F, intercept=F)
     if(i==1){
-      # ensures same lambda sequence is used for different lasso regressions
-      lambda_dec <- lasso_fit$lambda
       null.vote <- array(0, dim = c(dd, dd, length(lambda)))
       null.vote.ic <- array(0, dim = c(dd, dd, 3))
     }
@@ -46,12 +48,10 @@ glasso_mb2 <- function(data, samp_size, lambda){
     null.vote[-i, i, ] <- null.vote[-i, i, ] +
       (abs(as.matrix(lasso_fit$beta)) <= 1e-10)
     
-    aic.idx <- which.min( samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev
-                          + aic(samp_size, ncol(X) + 1) * lasso_fit$df )
-    bic.idx <- which.min( samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev
-                         + bic(samp_size, ncol(X) + 1) * lasso_fit$df )
-    mbic.idx <- which.min( samp_size/nrow(X) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev
-                          + mbic(samp_size, ncol(X) + 1) * lasso_fit$df )
+    dev <- (samp_size-1) * (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev
+    aic.idx <- which.min( dev + aic(samp_size, ncol(X) + 1) * lasso_fit$df )
+    bic.idx <- which.min( dev + bic(samp_size, ncol(X) + 1) * lasso_fit$df )
+    mbic.idx <- which.min( dev + mbic(samp_size, ncol(X) + 1) * lasso_fit$df )
     # aic.idx <- which.min( samp_size * log( (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev )
     #                       + aic(samp_size, ncol(X) + 1) * lasso_fit$df )
     # bic.idx <- which.min( samp_size * log( (1 - lasso_fit$dev.ratio) * lasso_fit$nulldev )
@@ -109,7 +109,7 @@ eglearn2 <- function(data,
   
   # Loop through variables
   for (k in 1:d) {
-    Sk <- Gamma2Sigma(Gamma = Gamma, k = k)
+    Sk <- Gamma2Sigma(Gamma = Gamma, k=k)
     if (reg_method == "glasso") {
       gl.fit <- lapply(1:length(rholist), FUN = function(i) {
         glassoFast::glassoFast(S = Sk, rho = rholist[i], thr = 1e-8, maxIt = 100000)$wi
@@ -190,6 +190,8 @@ eglearn2 <- function(data,
 
 
 
+
+
 sim_study <- function(d = 5, 
                           n = 100,
                           p = NULL,
@@ -198,7 +200,7 @@ sim_study <- function(d = 5,
                           gen_model = c("BA", "block"),
                           alphad = 1,
                           reg_method = c("ns", "glasso", "emst", "MTP2"),
-                          rhostring = "seq(0.01,1.5,length=15)",
+                          rhostring = "seq(0.01,5,length=100)",
                           incoh = FALSE,
                           rng = NULL){
   ## perform a simulation study to measure performance of the EMTP2 block descent algorithm.

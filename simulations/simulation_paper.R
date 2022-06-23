@@ -17,6 +17,7 @@ library(clusterGeneration)
 
 # source(here("GitHub/extremal_graph_learning/simulations/functions_paper.R"))
 source(here("simulations/functions_paper.R"))
+# source(here("functions_paper.R"))
 
 
 # change from here ----
@@ -28,7 +29,8 @@ sim_function <- sim_study
 
 # import json
 # json <- fromJSON(here("GitHub/extremal_graph_learning/simulations/config", paste0(sim_setting, ".json")))
-json <- fromJSON(here("/simulations/config", paste0(sim_setting, ".json")))
+json <- fromJSON(here("simulations/config", paste0(sim_setting, ".json")))
+# json <- fromJSON(here(paste0(sim_setting, ".json")))
 
 
 # process parameters
@@ -68,6 +70,8 @@ dttime <- gsub(pattern = " |:", x = Sys.time(), replacement = "_")
 # file_rds <- here("GitHub/extremal_graph_learning/simulations/output", paste0(sim_setting,  "-", dttime, ".rds"))
 file_log <- here("simulations/output", "progress.txt")
 file_rds <- here("simulations/output", paste0(sim_setting,  "-", dttime, ".rds"))
+# file_log <- here("progress.txt")
+# file_rds <- here(paste0(sim_setting,  "-", dttime, ".rds"))
 
 
 
