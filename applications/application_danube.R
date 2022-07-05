@@ -3,6 +3,10 @@ library(igraph)
 library(tidyverse)
 library(pbapply)
 library(here)
+library(Matrix)
+
+source(here("simulations/functions_paper.R"))
+
 load((here("applications/data/coords_danube.Rdata")))
 
 #### Danube data
