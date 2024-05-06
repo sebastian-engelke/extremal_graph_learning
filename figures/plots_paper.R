@@ -8,7 +8,7 @@ library(cowplot)
 library(tictoc)
 library(here)
 library(clusterGeneration)
-source(here("simulations/functions_paper.R"))
+source("simulations/functions_paper.R")
 
 ####################
 
@@ -59,7 +59,7 @@ dev.off()
 ##### Regularization Paths ######
 #################################
 
-eglearn_path <- function(d=20, m=2, reg_method, rholist, ...){
+eglearn_path <- function(d=20, m=2, reg_method, rholist, thr_zero=1e-5, ...){
   
   BA_model <- generate_BA_model(d=d, m=m)
   g <- BA_model$graph
@@ -69,7 +69,7 @@ eglearn_path <- function(d=20, m=2, reg_method, rholist, ...){
   p <- 1 - k/n
   X <- rmstable(n=n, d=d, model="HR", par=G)
   
-  fit_tmp <- eglearn2(data = X, p=p, rholist = rholist, reg_method = reg_method)
+  fit_tmp <- eglearn2(data = X, p=p, rholist = rholist, reg_method = reg_method, thr_zero=thr_zero)
   F1_tmp <- sapply(1:length(rholist), FUN = function(i) F1_score(g=g, gest=fit_tmp$graph[[i]]))
   connected_tmp <- sapply(1:length(rholist), FUN = function(i) ifelse(is_connected(fit_tmp$graph[[i]]), 1, 3))
   sparse_tmp <- sapply(1:length(rholist), FUN = function(i) length(E(fit_tmp$graph[[i]])) / (d*(d-1)/2))
@@ -81,18 +81,44 @@ eglearn_path <- function(d=20, m=2, reg_method, rholist, ...){
   axis(4, ylim=c(0,1),las=1)
   
   tibble(rholist = rholist, F1 = F1_tmp, sparsity = sparse_tmp, connected = factor(connected_tmp), reg_method = reg_method)
+
+  # F1_score(g=g, gest=make_empty_graph(n = d, directed = FALSE))  
+  # F1_score(g=g, gest=make_full_graph(n = d, directed = FALSE))
+
 }
 
 
 set.seed(124124)
 rholist <- seq(0.000001, 1, length.out = 30) 
-tbl1 <-  eglearn_path(d=20, m=2, reg_method = "ns", rholist=rholist)
+tbl1 <-  eglearn_path(d=20, m=2, reg_method = "ns", rholist=rholist,thr_zero=1e-10)
+
+
+
+set.seed(124124)
 rholist <- seq(0.000001, .25, length.out = 30) 
-tbl2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist)
+tbl2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 1e-5)
+
+
+set.seed(124124)
+rholist <- seq(0.000001, .1, length.out = 30) 
+tbl2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 1)
+
+
+set.seed(124124)
+rholist <- seq(0.000001, .03, length.out = 30) 
+tbl2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 2)
+
+
+
+
+
+
+
+
+
 
 tbl3 <- bind_rows(tbl1,tbl2) %>% 
   mutate(reg_method_label = refactor_methods(reg_method, lst_methods))
-
 
 gg_path <- ggplot(tbl3, aes(col=reg_method_label)) + facet_wrap(~reg_method_label, scales = "free_x") + geom_line(aes(x=rholist, y=F1)) +
   geom_line(aes(x=rholist, y=sparsity), lty = "dashed") +
@@ -113,7 +139,7 @@ save_myplot(gg_path, plt_nm = here("figures/ns_gl_path.pdf"), width = 2.5, heigh
 ##### trees and BA model  #######
 #################################
 
-d <- 100  ## 50, 100
+d <- 20  ## 50, 100
 
 dat_tree <- read_rds(here("figures/data", paste0("sim_study_1_d",d,"_tree.rds"))) %>% 
   unnest(cols = c("perf")) %>%

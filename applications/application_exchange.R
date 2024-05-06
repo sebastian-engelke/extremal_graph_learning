@@ -3,6 +3,9 @@ library(igraph)
 library(tidyverse)
 library(pbapply)
 library(here)
+library(Matrix)
+
+source(here("simulations/functions_paper.R"))
 
 #### Currency data
 # loading the data: X contains the absolute residuals from fitting an Arma(0, 2) - Garch(1, 1)
