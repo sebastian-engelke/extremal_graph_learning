@@ -96,20 +96,23 @@ tbl1 <-  eglearn_path(d=20, m=2, reg_method = "ns", rholist=rholist,thr_zero=1e-
 
 set.seed(124124)
 rholist <- seq(0.000001, .25, length.out = 30) 
-tbl2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 1e-5)
-
+tbl2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 1e-10)
+  
 
 set.seed(124124)
 rholist <- seq(0.000001, .1, length.out = 30) 
-tbl2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 1)
+tbl_thr2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 1)
 
 
 set.seed(124124)
 rholist <- seq(0.000001, .03, length.out = 30) 
-tbl2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 2)
+tbl_thr3 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 2)
 
 
 
+set.seed(124124)
+rholist <- seq(0.000001, .002, length.out = 30) 
+tbl_thr4 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 5)
 
 
 
@@ -132,6 +135,90 @@ gg_path <- ggplot(tbl3, aes(col=reg_method_label)) + facet_wrap(~reg_method_labe
   labs(color="Method:", fill = "Method:")
 save_myplot(gg_path, plt_nm = here("figures/ns_gl_path.pdf"), width = 2.5, height = 2.5)
   
+
+
+
+
+#################################
+##### Thresholding for glasso ###
+#################################
+
+
+tbl_thr1 <- bind_rows(tbl2) %>% 
+  mutate(reg_method_label = refactor_methods(reg_method, lst_methods))
+
+
+gg_thr1 <- ggplot(tbl_thr1, aes(col=reg_method_label)) + 
+  geom_line(aes(x=rholist, y=F1)) +
+  geom_line(aes(x=rholist, y=sparsity), lty = "dashed") +
+  geom_point(aes(x=rholist, y=F1, shape = connected), fill="white", size = 2, show.legend = FALSE) +
+  ylab("F score / Graph density") +
+  xlab(TeX("Tuning parameter $\\rho$")) +
+  scale_shape_manual(values = c(21,4)) +  
+  scale_fill_manual(values = my_fill[c("gl", "ns")]) +
+  scale_colour_manual(values = my_col[c("gl", "ns")]) +
+  theme(legend.position = c(0.5, -0.23), legend.direction = "horizontal",  strip.text.x = element_blank()) +
+  ylim(0,1) +
+  labs(color="Method:", fill = "Method:")
+save_myplot(gg_thr1, plt_nm = "figures/gl_path_thr1.pdf", width = 2.5, height = 2.5)
+
+
+tbl_thr2 <- bind_rows(tbl_thr2) %>% 
+  mutate(reg_method_label = refactor_methods(reg_method, lst_methods))
+
+
+gg_thr2 <- ggplot(tbl_thr2, aes(col=reg_method_label)) + 
+  geom_line(aes(x=rholist, y=F1)) +
+  geom_line(aes(x=rholist, y=sparsity), lty = "dashed") +
+  geom_point(aes(x=rholist, y=F1, shape = connected), fill="white", size = 2, show.legend = FALSE) +
+  ylab("F score / Graph density") +
+  xlab(TeX("Tuning parameter $\\rho$")) +
+  scale_shape_manual(values = c(21,4)) +  
+  scale_fill_manual(values = my_fill[c("gl", "ns")]) +
+  scale_colour_manual(values = my_col[c("gl", "ns")]) +
+  theme(legend.position = c(0.5, -0.23), legend.direction = "horizontal",  strip.text.x = element_blank()) +
+  ylim(0,1) +
+  labs(color="Method:", fill = "Method:")
+save_myplot(gg_thr2, plt_nm = "figures/gl_path_thr2.pdf", width = 2.5, height = 2.5)
+  
+
+tbl_thr3 <- bind_rows(tbl_thr3) %>% 
+  mutate(reg_method_label = refactor_methods(reg_method, lst_methods))
+
+
+gg_thr3 <- ggplot(tbl_thr3, aes(col=reg_method_label)) + 
+  geom_line(aes(x=rholist, y=F1)) +
+  geom_line(aes(x=rholist, y=sparsity), lty = "dashed") +
+  geom_point(aes(x=rholist, y=F1, shape = connected), fill="white", size = 2, show.legend = FALSE) +
+  ylab("F score / Graph density") +
+  xlab(TeX("Tuning parameter $\\rho$")) +
+  scale_shape_manual(values = c(21,4)) +  
+  scale_fill_manual(values = my_fill[c("gl", "ns")]) +
+  scale_colour_manual(values = my_col[c("gl", "ns")]) +
+  theme(legend.position = c(0.5, -0.23), legend.direction = "horizontal",  strip.text.x = element_blank()) +
+  ylim(0,1) +
+  labs(color="Method:", fill = "Method:")
+save_myplot(gg_thr3, plt_nm = "figures/gl_path_thr3.pdf", width = 2.5, height = 2.5)
+    
+
+
+tbl_thr4 <- bind_rows(tbl_thr4) %>% 
+  mutate(reg_method_label = refactor_methods(reg_method, lst_methods))
+
+
+gg_thr4 <- ggplot(tbl_thr4, aes(col=reg_method_label)) + 
+  geom_line(aes(x=rholist, y=F1)) +
+  geom_line(aes(x=rholist, y=sparsity), lty = "dashed") +
+  geom_point(aes(x=rholist, y=F1, shape = connected), fill="white", size = 2, show.legend = FALSE) +
+  ylab("F score / Graph density") +
+  xlab(TeX("Tuning parameter $\\rho$")) +
+  scale_shape_manual(values = c(21,4)) +  
+  scale_fill_manual(values = my_fill[c("gl", "ns")]) +
+  scale_colour_manual(values = my_col[c("gl", "ns")]) +
+  theme(legend.position = c(0.5, -0.23), legend.direction = "horizontal",  strip.text.x = element_blank()) +
+  ylim(0,1) +
+  labs(color="Method:", fill = "Method:")
+save_myplot(gg_thr4, plt_nm = "figures/gl_path_thr4.pdf", width = 2.5, height = 2.5)
 
 
 #################################
