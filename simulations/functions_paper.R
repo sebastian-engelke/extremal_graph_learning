@@ -191,7 +191,18 @@ eglearn2 <- function(data,
 
 
 
+set_graph_parameters <- function(graph) {
+  # set parameters
+  igraph::V(graph)$color <- grDevices::adjustcolor(col = "#4477AA", alpha.f = 0.4)
+  igraph::V(graph)$frame.color <- grDevices::adjustcolor(col = "#4477AA", alpha.f = 1)
+  igraph::V(graph)$label.color <- "black"
+  igraph::V(graph)$size <- 15
+  igraph::E(graph)$width <- 2
+  igraph::E(graph)$color <- "darkgrey"
 
+  # return graph
+  return(graph)
+}
 
 
 sim_study <- function(d = 5,

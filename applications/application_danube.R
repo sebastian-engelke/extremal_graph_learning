@@ -4,6 +4,8 @@ library(tidyverse)
 library(pbapply)
 library(here)
 library(Matrix)
+library(latex2exp)
+
 
 source("simulations/functions_paper.R")
 
@@ -11,20 +13,23 @@ load("applications/data/coords_danube.Rdata")
 
 #### Danube data
 X <- danube$data_clustered[1:214,]
-
 X_test <- danube$data_clustered[215:428,]
+
 g <- graph_from_edgelist(danube$flow_edges)
 g <- graphicalExtremes:::set_graph_parameters(g)
+
 n <- nrow(X)
 p <- 1 - floor(n^.7)/n
 Y_all <- data2mpareto(danube$data_clustered, p)
 Y <- data2mpareto(X, p)
 Y_test <- data2mpareto(X_test, p)
-rholist <- seq(.005, .15, length.out=25)
-chi_hat <- emp_chi(data = X, p = p)
-Gamma_hat <- emp_vario(data = X, p = p)
-chi_hat_test <- emp_chi(data = X_test, p = p)
-Gamma_hat_test <- emp_vario(data = X_test, p = p)
+rholist <- seq(.0000001, .1, length.out=11)
+
+
+# chi_hat <- emp_chi(data = X, p = p)
+# Gamma_hat <- emp_vario(data = X, p = p)
+# chi_hat_test <- emp_chi(data = X_test, p = p)
+# Gamma_hat_test <- emp_vario(data = X_test, p = p)
 
 # Run eglearn for a suitable list of penalization parameters
 #rholist <- seq(0, 0.1, length.out = 11)
@@ -32,6 +37,15 @@ eglearn_fit <- eglearn(
     data = Y,
     rholist = rholist,
     complete_Gamma = TRUE
+)
+
+
+plotDanubeIGraph(graph = eglearn_fit$graph_ic$mbic)
+
+loglik_mbic <- loglik_HR(
+    data = Y_test,
+    Gamma = eglearn_fit$Gamma_ic$mbic,
+    graph = eglearn_fit$graph_ic$mbic
 )
 
 # Compute the corresponding likelihoods/ICs
@@ -80,6 +94,17 @@ flow_loglik_test <- loglik_HR(
     graph = flow_graph
 )
 
+# Fit tree grpah to the data
+emst_fit <- emst(data = Y, method = "vario")
+
+# Compute likelihood/ICs, and plot fitted graph, parameters
+loglik_emst <- loglik_HR(
+    data = Y_test,
+    Gamma = emst_fit$Gamma,
+    graph = emst_fit$graph
+)
+plotDanubeIGraph(graph = emst_fit$graph)
+
 
 
 # ggplot(mapping = aes(x = rholist, y = logliks_eglearn['bic', ])) +
@@ -100,13 +125,14 @@ flow_loglik_test <- loglik_HR(
 #     )
 
 
-ggplot(mapping = aes(x = rholist, y = logliks_eglearn_test['loglik', ])) +
+gg_test <- ggplot(mapping = aes(x = rholist, y = logliks_eglearn_test['loglik', ])) +
     geom_line() +
     geom_point(shape = 21, size = 3, stroke = 1, fill = "white") +
     geom_hline(aes(yintercept = flow_loglik_test['loglik']), lty = "dashed") +
-    # geom_hline(aes(yintercept = loglik_emst['bic']), lty = "dotted") +
-    xlab("rho") +
-    ylab("BIC") +
+    geom_hline(aes(yintercept = loglik_emst['loglik']), lty = "dotted") +
+    #geom_hline(aes(yintercept = loglik_mbic['loglik']), lty = "solid") +
+    xlab(TeX("Tuning parameter $\\rho$")) +
+    ylab("Test log-likelihood") +
     scale_x_continuous(
         breaks = rholist,
         labels = round(rholist, 3),
@@ -116,6 +142,14 @@ ggplot(mapping = aes(x = rholist, y = logliks_eglearn_test['loglik', ])) +
             name = "Number of edges"
         )
     )
+
+
+
+
+pdf(file = "applications/figures/danube_test.pdf", width = 5, height = 5)
+par(cex = .8, cex.lab = 1.5, cex.axis = 1.5, cex.main = 1.5, pty="s", mar = c(5,5,4,2) +.1)
+gg_test
+dev.off()
 
 
 

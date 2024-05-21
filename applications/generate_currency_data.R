@@ -34,7 +34,7 @@ G.est = emp_vario(data=data, p = p)
 graph.full <- make_full_graph(d)
 MST.est <- igraph::mst(graph=graph.full, weights = 2- Gamma2chi(G.est[ends(graph.full,E(graph.full))]), algorithm = "prim")
 vertex_attr(MST.est) <- list(name = colnames(data))
-MST.est <- graphicalExtremes:::set_graph_parameters(MST.est)
+MST.est <- set_graph_parameters(MST.est)
 
 # save the data as X, plotting coordinates as coords_tree and coords, and minimum spanning tree as g
 X <- data
