@@ -8,7 +8,7 @@ library(cowplot)
 library(tictoc)
 library(here)
 library(clusterGeneration)
-source("simulations/functions_paper.R")
+source(here("simulations/functions_paper.R"))
 
 ####################
 
@@ -69,7 +69,7 @@ eglearn_path <- function(d=20, m=2, reg_method, rholist, thr_zero=1e-5, ...){
   p <- 1 - k/n
   X <- rmstable(n=n, d=d, model="HR", par=G)
   
-  fit_tmp <- eglearn2(data = X, p=p, rholist = rholist, reg_method = reg_method, thr_zero=thr_zero)
+  fit_tmp <- eglearn2(data = X, p=p, rholist = rholist, thr_zero = thr_zero, reg_method = reg_method, ic = "hr")
   F1_tmp <- sapply(1:length(rholist), FUN = function(i) F1_score(g=g, gest=fit_tmp$graph[[i]]))
   connected_tmp <- sapply(1:length(rholist), FUN = function(i) ifelse(is_connected(fit_tmp$graph[[i]]), 1, 3))
   sparse_tmp <- sapply(1:length(rholist), FUN = function(i) length(E(fit_tmp$graph[[i]])) / (d*(d-1)/2))
@@ -81,10 +81,6 @@ eglearn_path <- function(d=20, m=2, reg_method, rholist, thr_zero=1e-5, ...){
   axis(4, ylim=c(0,1),las=1)
   
   tibble(rholist = rholist, F1 = F1_tmp, sparsity = sparse_tmp, connected = factor(connected_tmp), reg_method = reg_method)
-
-  # F1_score(g=g, gest=make_empty_graph(n = d, directed = FALSE))  
-  # F1_score(g=g, gest=make_full_graph(n = d, directed = FALSE))
-
 }
 
 
@@ -92,32 +88,21 @@ set.seed(124124)
 rholist <- seq(0.000001, 1, length.out = 30) 
 tbl1 <-  eglearn_path(d=20, m=2, reg_method = "ns", rholist=rholist,thr_zero=1e-10)
 
-
-
 set.seed(124124)
 rholist <- seq(0.000001, .25, length.out = 30) 
 tbl2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 1e-10)
-  
 
 set.seed(124124)
 rholist <- seq(0.000001, .1, length.out = 30) 
 tbl_thr2 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 1)
 
-
 set.seed(124124)
 rholist <- seq(0.000001, .03, length.out = 30) 
 tbl_thr3 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 2)
 
-
-
 set.seed(124124)
 rholist <- seq(0.000001, .002, length.out = 30) 
 tbl_thr4 <- eglearn_path(d=20, m=2, reg_method = "glasso", rholist=rholist, thr_zero = 5)
-
-
-
-
-
 
 
 tbl3 <- bind_rows(tbl1,tbl2) %>% 
@@ -134,8 +119,6 @@ gg_path <- ggplot(tbl3, aes(col=reg_method_label)) + facet_wrap(~reg_method_labe
   theme(legend.position = c(0.5, -0.23), legend.direction = "horizontal",  strip.text.x = element_blank()) +
   labs(color="Method:", fill = "Method:")
 save_myplot(gg_path, plt_nm = here("figures/ns_gl_path.pdf"), width = 2.5, height = 2.5)
-  
-
 
 
 
@@ -144,14 +127,17 @@ save_myplot(gg_path, plt_nm = here("figures/ns_gl_path.pdf"), width = 2.5, heigh
 #################################
 
 
+F1_ns <- max(tbl1$F1) # best F1-score attained by neighborhood selection, for comparison
+
+
 tbl_thr1 <- bind_rows(tbl2) %>% 
   mutate(reg_method_label = refactor_methods(reg_method, lst_methods))
-
 
 gg_thr1 <- ggplot(tbl_thr1, aes(col=reg_method_label)) + 
   geom_line(aes(x=rholist, y=F1)) +
   geom_line(aes(x=rholist, y=sparsity), lty = "dashed") +
   geom_point(aes(x=rholist, y=F1, shape = connected), fill="white", size = 2, show.legend = FALSE) +
+  geom_hline(aes(yintercept = F1_ns), lwd=1.25, col=my_col["ns"]) +
   ylab("F score / Graph density") +
   xlab(TeX("Tuning parameter $\\rho$")) +
   scale_shape_manual(values = c(21,4)) +  
@@ -160,17 +146,17 @@ gg_thr1 <- ggplot(tbl_thr1, aes(col=reg_method_label)) +
   theme(legend.position = c(0.5, -0.23), legend.direction = "horizontal",  strip.text.x = element_blank()) +
   ylim(0,1) +
   labs(color="Method:", fill = "Method:")
-save_myplot(gg_thr1, plt_nm = "figures/gl_path_thr1.pdf", width = 2.5, height = 2.5)
+save_myplot(gg_thr1, plt_nm = here("figures/gl_path_thr1.pdf"), width = 2.5, height = 2.5)
 
 
 tbl_thr2 <- bind_rows(tbl_thr2) %>% 
   mutate(reg_method_label = refactor_methods(reg_method, lst_methods))
 
-
 gg_thr2 <- ggplot(tbl_thr2, aes(col=reg_method_label)) + 
   geom_line(aes(x=rholist, y=F1)) +
   geom_line(aes(x=rholist, y=sparsity), lty = "dashed") +
   geom_point(aes(x=rholist, y=F1, shape = connected), fill="white", size = 2, show.legend = FALSE) +
+  geom_hline(aes(yintercept = F1_ns), lwd=1.25, col=my_col["ns"]) +
   ylab("F score / Graph density") +
   xlab(TeX("Tuning parameter $\\rho$")) +
   scale_shape_manual(values = c(21,4)) +  
@@ -179,17 +165,17 @@ gg_thr2 <- ggplot(tbl_thr2, aes(col=reg_method_label)) +
   theme(legend.position = c(0.5, -0.23), legend.direction = "horizontal",  strip.text.x = element_blank()) +
   ylim(0,1) +
   labs(color="Method:", fill = "Method:")
-save_myplot(gg_thr2, plt_nm = "figures/gl_path_thr2.pdf", width = 2.5, height = 2.5)
-  
+save_myplot(gg_thr2, plt_nm = here("figures/gl_path_thr2.pdf"), width = 2.5, height = 2.5)
+
 
 tbl_thr3 <- bind_rows(tbl_thr3) %>% 
   mutate(reg_method_label = refactor_methods(reg_method, lst_methods))
-
 
 gg_thr3 <- ggplot(tbl_thr3, aes(col=reg_method_label)) + 
   geom_line(aes(x=rholist, y=F1)) +
   geom_line(aes(x=rholist, y=sparsity), lty = "dashed") +
   geom_point(aes(x=rholist, y=F1, shape = connected), fill="white", size = 2, show.legend = FALSE) +
+  geom_hline(aes(yintercept = F1_ns), lwd=1.25, col=my_col["ns"]) +
   ylab("F score / Graph density") +
   xlab(TeX("Tuning parameter $\\rho$")) +
   scale_shape_manual(values = c(21,4)) +  
@@ -198,18 +184,17 @@ gg_thr3 <- ggplot(tbl_thr3, aes(col=reg_method_label)) +
   theme(legend.position = c(0.5, -0.23), legend.direction = "horizontal",  strip.text.x = element_blank()) +
   ylim(0,1) +
   labs(color="Method:", fill = "Method:")
-save_myplot(gg_thr3, plt_nm = "figures/gl_path_thr3.pdf", width = 2.5, height = 2.5)
-    
+save_myplot(gg_thr3, plt_nm = here("figures/gl_path_thr3.pdf"), width = 2.5, height = 2.5)
 
 
 tbl_thr4 <- bind_rows(tbl_thr4) %>% 
   mutate(reg_method_label = refactor_methods(reg_method, lst_methods))
 
-
 gg_thr4 <- ggplot(tbl_thr4, aes(col=reg_method_label)) + 
   geom_line(aes(x=rholist, y=F1)) +
   geom_line(aes(x=rholist, y=sparsity), lty = "dashed") +
   geom_point(aes(x=rholist, y=F1, shape = connected), fill="white", size = 2, show.legend = FALSE) +
+  geom_hline(aes(yintercept = F1_ns), lwd=1.25, col=my_col["ns"]) +
   ylab("F score / Graph density") +
   xlab(TeX("Tuning parameter $\\rho$")) +
   scale_shape_manual(values = c(21,4)) +  
@@ -218,7 +203,8 @@ gg_thr4 <- ggplot(tbl_thr4, aes(col=reg_method_label)) +
   theme(legend.position = c(0.5, -0.23), legend.direction = "horizontal",  strip.text.x = element_blank()) +
   ylim(0,1) +
   labs(color="Method:", fill = "Method:")
-save_myplot(gg_thr4, plt_nm = "figures/gl_path_thr4.pdf", width = 2.5, height = 2.5)
+save_myplot(gg_thr4, plt_nm = here("figures/gl_path_thr4.pdf"), width = 2.5, height = 2.5)
+  
 
 
 #################################
@@ -289,7 +275,7 @@ save_myplot(gg1, plt_nm = here("figures", paste0("boxplot_d",d,".pdf")), width =
     mutate(reg_method_n = paste(reg_method_label, n_hi_low, sep = "__"))
 
   
-  g0 <- ggplot(dat %>% filter(reg_method =="ns"),  aes(x=alphad_char, y=F1_max,
+  g0 <- ggplot(dat %>% filter(reg_method=="ns" | reg_method=="glasso"),  aes(x=alphad_char, y=F1_max,
                          fill = reg_method_label,
                          col=reg_method_label)) +
     geom_boxplot(alpha=.8, size=.35, outlier.size = .7) +
