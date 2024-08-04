@@ -5,7 +5,9 @@
     "m":[2],
     "method": ["maxstable"],
     "rhostring": ["seq(0.01,1,length=40)"],
-    "reg_method": ["emst", "ns", "glasso", "MTP2"]}, 
+    "reg_method": ["emst", "ns", "glasso", "MTP2"],
+    "ic": ["hr"]
+  }, 
   "other_params":{
     "nsim":[100], 
     "seed":36224,

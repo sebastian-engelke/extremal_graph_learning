@@ -6,7 +6,9 @@
     "gen_model": ["block"],
     "rhostring": ["seq(0.01,0.5,length=20)"],
     "incoh": [true],
-    "reg_method": ["ns", "glasso"]}, // ["emst","glasso", "glasso_adap", "mb"]  "laplace_adap_emp", "laplace_adap_emtp2"
+    "reg_method": ["ns", "glasso"],
+    "ic": ["hr"]
+  }, // ["emst","glasso", "glasso_adap", "mb"]  "laplace_adap_emp", "laplace_adap_emtp2"
   "other_params":{
     "nsim":[100], // 100
     "seed":24324, 

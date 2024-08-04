@@ -10,18 +10,18 @@ library(jsonlite)
 library(glassoFast)
 library(glmnet)  
 library(osqp)
-library(tictoc)
 library(pbapply)
 library(MASS)
 library(clusterGeneration)
+library(egg)
 
 source(here("simulations/functions_paper.R"))
 
 
 # change from here ----
-sim_setting <- "sim_study_1_d20_tree"
+sim_setting <- "sim_study_1_d19_block_alpha"
 strategy <-  "parallel"  # "sequential" or "parallel"
-n_workers <- 40
+n_workers <- 10
 sim_function <- sim_study
 # to here ----
 
@@ -98,9 +98,12 @@ ll <- foreach(i = 1:m, .combine = bind_rows,
               .options.future = list(scheduling = FALSE),
               .errorhandling = "remove") %dopar% {
                 # Run simulation
+                invisible(gc())
                 cat("Simulation", i, "out of", m, "\n", file = file_log, append = TRUE)
                 wrapper_sim(i, other_args$rowid[i], sim_function, fun_args)
               }
+invisible(gc())
+
 
 
 sink(file = file_log, append = TRUE)
