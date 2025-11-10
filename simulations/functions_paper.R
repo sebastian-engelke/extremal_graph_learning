@@ -9,10 +9,6 @@ mychol <- function(M){
   }
 }
 
-aic <- function(n, p) 2
-bic <- function(n, p) log(n)
-mbic <- function(n, p) log(n) * log(log(p)) # modified BIC of Wang & Leng, JRSSB 2009
-
 
 
 glasso_mb2 <- function(data, samp_size, lambda, thr_zero = 1e-10, ic = FALSE, refit = TRUE){
