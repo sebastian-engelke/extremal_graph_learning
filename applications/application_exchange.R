@@ -38,7 +38,7 @@ eglearn_fit$graph_ic <- lapply(eglearn_fit$graph_ic, function(gr) {
 # plotting graphs
 pdf(file = here("applications/figures/exchange.pdf"), width = 5, height = 5)
 par(cex = 0.6, cex.lab = 1.5, cex.axis = 1.5, cex.main = 1.5, pty="s", mar = c(5,5,4,2) +.1)
-plot(g, layout = coords_exchange, edge.arrow.size=.3)
+plot(set_graph_parameters(g), layout = coords_exchange, edge.arrow.size=.3)
 dev.off()
 
 pdf(file = here("applications/figures/exchange_aic.pdf"), width = 5, height = 5)

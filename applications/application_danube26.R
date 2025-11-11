@@ -187,6 +187,7 @@ dev.off()
 
 #### comparing vanilla glasso and ns
 # transforming data to (approximate) marginal normality
+X <- danube$data_clustered[,ids]
 n <- nrow(X)
 d <- ncol(X)
 # Y <- log(X)
